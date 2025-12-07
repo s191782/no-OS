@@ -66,7 +66,7 @@ static void no_os_i3c_addr_init(struct no_os_i3c_bus_desc *desc);
 int no_os_i3c_init(struct no_os_i3c_desc **desc,
 		   const struct no_os_i3c_init_param *param)
 {
-	int ret;
+	int ret = 0;
 	struct no_os_i3c_desc *device_desc;
 	struct no_os_i3c_bus_desc **bus_desc;
 	struct no_os_i3c_bus_init_param *param_bus;
@@ -130,8 +130,10 @@ int no_os_i3c_init(struct no_os_i3c_desc **desc,
 			break;
 		it++;
 	};
-	if (it == (*bus_desc)->devs + NO_OS_I3C_MAX_DEV_NUMBER)
+	if (it == (*bus_desc)->devs + NO_OS_I3C_MAX_DEV_NUMBER) {
+		ret = -ENOMEM;
 		goto error_device;
+	}
 
 	*it = device_desc;
 
@@ -163,7 +165,7 @@ int no_os_i3c_init_bus(struct no_os_i3c_bus_desc **desc,
 {
 	struct no_os_i3c_bus_desc *bus_desc;
 	bool has_static_i3c_addr = 0;
-	int ret;
+	int ret = 0;
 	int i = 0;
 	uint8_t data;
 	const struct no_os_i3c_init_param **it;

@@ -61,7 +61,7 @@ int ade9000_read(struct ade9000_dev *dev, uint16_t reg_addr, uint32_t *reg_data)
 		return -EINVAL;
 
 	addr = (uint16_t) no_os_field_prep(NO_OS_GENMASK(16, 4), reg_addr);
-	no_os_put_unaligned_be16(addr, &buff);
+	no_os_put_unaligned_be16(addr, &buff[0]);
 	buff[1] = buff[1] | ADE9000_SPI_READ;
 
 	/* 16 bits registers */
@@ -199,7 +199,7 @@ int ade9000_read_temp(struct ade9000_dev *dev)
 
 	// wait for conversion result
 	while (!(status)) {
-		ret = ade9000_get_int_status0(dev, ADE9000_MASK0_TEMP_RDY, &status);
+		ret = ade9000_get_int_status0(dev, ADE9000_MASK0_TEMP_RDY, status);
 		no_os_mdelay(2);
 		timeout++;
 		if (timeout == 2000) {
@@ -405,8 +405,10 @@ int ade9000_init(struct ade9000_dev **device,
 	if (ret)
 		goto error_spi;
 
-	if (chip_id != ADE9000_CHIP_ID)
+	if (chip_id != ADE9000_CHIP_ID) {
+		ret = -ENODEV;
 		goto error_spi;
+	}
 
 	/* Enable Temperature Sensor */
 	ret = ade9000_update_bits(dev, ADE9000_REG_TEMP_CFG, ADE9000_TEMP_EN,
