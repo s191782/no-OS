@@ -185,7 +185,7 @@ int ade9000_read_temp(struct ade9000_dev *dev)
 	/* temperature offset */
 	uint32_t offset;
 	/* status of temperature ready */
-	uint8_t *status = 0;
+	uint8_t status = 0;
 	/* timeout for temperature read */
 	uint16_t timeout = 0;
 
@@ -198,15 +198,23 @@ int ade9000_read_temp(struct ade9000_dev *dev)
 		return ret;
 
 	// wait for conversion result
-	while (!(status)) {
-		ret = ade9000_get_int_status0(dev, ADE9000_MASK0_TEMP_RDY, status);
+	while (!status) {
+		ret = ade9000_get_int_status0(dev, ADE9000_MASK0_TEMP_RDY, &status);
+		if (ret)
+			return ret;
+		if (status)
+			break;
 		no_os_mdelay(2);
 		timeout++;
 		if (timeout == 2000) {
-			ret = -ENODATA;
-			return ret;
+			return -ENODATA;
 		}
 	}
+
+	// clear the latched TEMP_RDY bit (write-1-to-clear)
+	ret = ade9000_write(dev, ADE9000_REG_STATUS0, ADE9000_MASK0_TEMP_RDY);
+	if (ret)
+		return ret;
 
 	// if conversion succeded compute temperature
 	ret = ade9000_read(dev, ADE9000_REG_TEMP_RSLT, &temp_raw);
